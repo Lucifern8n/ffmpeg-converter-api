@@ -1,19 +1,11 @@
-from fastapi import FastAPI, UploadFile, File, Header, HTTPException
+from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import FileResponse
 import subprocess, uuid, os
-
-API_KEY = os.getenv("API_KEY", "changeme")
 
 app = FastAPI()
 
 @app.post("/convert")
-async def convert_video(
-    file: UploadFile = File(...),
-    x_api_key: str = Header(None)
-):
-    if x_api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
+async def convert_video(file: UploadFile = File(...)):
     uid = str(uuid.uuid4())
     inp = f"/tmp/{uid}_in.mp4"
     out = f"/tmp/{uid}_out.mp4"
@@ -35,10 +27,9 @@ async def convert_video(
 
     subprocess.run(cmd, check=True)
 
-    os.remove(inp)
+    return FileResponse(out, media_type="video/mp4", filename="short.mp4")
 
-    return FileResponse(
-        out,
-        media_type="video/mp4",
-        filename="short.mp4"
-    )
+
+@app.get("/")
+def root():
+    return {"status": "ffmpeg api running"}
